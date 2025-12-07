@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>simple_ipc - Named Pipe IPC for Eiffel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_ipc</h1>
+        <p class="tagline">Named Pipe IPC for Eiffel</p>
+        <div class="badges">
+            <span class="badge badge-rfc">Foundation Layer</span>
+            <span class="badge badge-version">v1.0.0</span>
+            <span class="badge badge-license">MIT</span>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#quick-start">Quick Start</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#api">API Reference</a></li>
+            <li><a href="https://github.com/ljr1981/simple_ipc">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                <strong>simple_ipc</strong> provides SCOOP-compatible inter-process communication via
+                Windows Named Pipes for Eiffel applications. It wraps the Win32 Named Pipe API through
+                a clean C interface, enabling IPC without threading complications.
+            </p>
+            <p>
+                The library supports both server and client pipe operations, with read/write capabilities
+                for text and binary data, making it ideal for local service communication and process
+                coordination.
+            </p>
+            <p>
+                Part of the <strong>simple_*</strong> ecosystem of focused, single-purpose Eiffel libraries.
+            </p>
+        </section>
+
+        <section id="quick-start">
+            <h2>Quick Start</h2>
+            <h3>Installation</h3>
+            <pre><code>&lt;library name="simple_ipc" location="$SIMPLE_IPC\simple_ipc.ecf"/&gt;</code></pre>
+
+            <h3>Server Side</h3>
+            <pre><code>local
+    pipe: SIMPLE_IPC
+do
+    -- Create named pipe server
+    create pipe.make_server ("MyPipe")
+
+    if pipe.is_valid then
+        print ("Waiting for client...%N")
+        pipe.wait_for_connection
+
+        if pipe.is_connected then
+            -- Read from client
+            if attached pipe.read as msg then
+                print ("Received: " + msg + "%N")
+            end
+
+            -- Send response
+            pipe.write ("Hello from server!")
+        end
+
+        pipe.close
+    end
+end</code></pre>
+
+            <h3>Client Side</h3>
+            <pre><code>local
+    pipe: SIMPLE_IPC
+do
+    -- Connect to named pipe
+    create pipe.make_client ("MyPipe")
+
+    if pipe.is_valid then
+        -- Send message
+        pipe.write ("Hello from client!")
+
+        -- Read response
+        if attached pipe.read as response then
+            print ("Server says: " + response + "%N")
+        end
+
+        pipe.close
+    end
+end</code></pre>
+        </section>
+
+        <section id="features">
+            <h2>Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Server Mode</h4>
+                    <p>Create named pipes and wait for client connections</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Client Mode</h4>
+                    <p>Connect to existing named pipes</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Text/Binary</h4>
+                    <p>Send and receive string and binary data</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Connection Mgmt</h4>
+                    <p>Disconnect and reconnect capabilities</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="api">
+            <h2>API Reference</h2>
+
+            <h3>Creation</h3>
+            <table>
+                <tr><th>Feature</th><th>Description</th></tr>
+                <tr><td><code>make_server (name)</code></td><td>Create named pipe server (\\.\pipe\name)</td></tr>
+                <tr><td><code>make_client (name)</code></td><td>Connect to existing named pipe</td></tr>
+            </table>
+
+            <h3>Connection Management</h3>
+            <table>
+                <tr><th>Feature</th><th>Description</th></tr>
+                <tr><td><code>wait_for_connection</code></td><td>Wait for client to connect (server mode)</td></tr>
+                <tr><td><code>disconnect</code></td><td>Disconnect current client, allow new connection</td></tr>
+                <tr><td><code>close</code></td><td>Close pipe and release resources</td></tr>
+            </table>
+
+            <h3>Data Transfer</h3>
+            <table>
+                <tr><th>Feature</th><th>Description</th></tr>
+                <tr><td><code>read: detachable STRING_8</code></td><td>Read string from pipe</td></tr>
+                <tr><td><code>write (data): BOOLEAN</code></td><td>Write string to pipe</td></tr>
+                <tr><td><code>read_bytes (count)</code></td><td>Read up to count bytes</td></tr>
+                <tr><td><code>write_bytes (data)</code></td><td>Write bytes to pipe</td></tr>
+            </table>
+
+            <h3>Status Queries</h3>
+            <table>
+                <tr><th>Feature</th><th>Description</th></tr>
+                <tr><td><code>is_valid</code></td><td>Is the pipe valid?</td></tr>
+                <tr><td><code>is_connected</code></td><td>Is a client connected? (server mode)</td></tr>
+                <tr><td><code>is_server</code></td><td>Is this a server pipe?</td></tr>
+                <tr><td><code>pipe_name</code></td><td>Full pipe name (\\.\pipe\...)</td></tr>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/ljr1981">simple_*</a> library collection</p>
+        <p>Dependencies: base, encoding</p>
+        <p class="copyright">MIT License - Copyright (c) 2024-2025, Larry Rix</p>
+    </footer>
+</body>
+</html>
