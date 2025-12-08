@@ -4,7 +4,7 @@
 
 # SIMPLE_IPC
 
-**[Documentation](https://ljr1981.github.io/simple_ipc/)**
+**[Documentation](https://simple-eiffel.github.io/simple_ipc/)**
 
 ### Named Pipe IPC Library for Eiffel
 
@@ -60,7 +60,7 @@ The library supports both server and client pipe operations, with read/write cap
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/ljr1981/simple_ipc.git
+git clone https://github.com/simple-eiffel/simple_ipc.git
 ```
 
 2. Compile the C library:
@@ -281,8 +281,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Contact
 
 - **Author:** Larry Rix
-- **Repository:** https://github.com/ljr1981/simple_ipc
-- **Issues:** https://github.com/ljr1981/simple_ipc/issues
+- **Repository:** https://github.com/simple-eiffel/simple_ipc
+- **Issues:** https://github.com/simple-eiffel/simple_ipc/issues
 
 ---
 
