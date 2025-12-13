@@ -3,7 +3,7 @@ note
 	testing: "covers"
 
 class
-	TEST_SIMPLE_IPC
+	LIB_TESTS
 
 inherit
 	TEST_SET_BASE
