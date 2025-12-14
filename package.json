@@ -1,0 +1,9 @@
+{
+  "name": "simple_ipc",
+  "version": "0.1.0",
+  "description": "Simple IPC Library - SCOOP-compatible Win32 named pipe communication",
+  "author": "Larry Rix",
+  "license": "MIT",
+  "category": "networking",
+  "keywords": ["ipc", "pipes", "interprocess", "communication"]
+}
