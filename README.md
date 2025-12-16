@@ -67,18 +67,18 @@ SIMPLE_IPC (facade)
 git clone https://github.com/simple-eiffel/simple_ipc.git
 ```
 
-2. Set the environment variable:
+2. Set the ecosystem environment variable (one-time setup for all simple_* libraries):
 ```bash
 # Windows
-set SIMPLE_IPC=D:\path\to\simple_ipc
+set SIMPLE_EIFFEL=D:\prod
 
 # Linux/macOS
-export SIMPLE_IPC=/path/to/simple_ipc
+export SIMPLE_EIFFEL=/path/to/prod
 ```
 
 3. Add to your ECF file:
 ```xml
-<library name="simple_ipc" location="$SIMPLE_IPC\simple_ipc.ecf"/>
+<library name="simple_ipc" location="$SIMPLE_EIFFEL/simple_ipc/simple_ipc.ecf"/>
 ```
 
 ### Basic Usage
