@@ -16,8 +16,8 @@
 			<concurrency support="scoop" use="thread"/>
 			<void_safety support="all"/>
 		</capability>
-		<external_include location="$(SIMPLE_IPC)\Clib"/>
-		<external_object location="$(SIMPLE_IPC)\Clib\simple_ipc.obj">
+		<external_include location="$(SIMPLE_EIFFEL)/simple_ipc/Clib"/>
+		<external_object location="$(SIMPLE_EIFFEL)/simple_ipc/Clib/simple_ipc.obj">
 			<condition>
 				<platform value="windows"/>
 			</condition>
