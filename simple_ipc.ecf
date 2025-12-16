@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <system xmlns="http://www.eiffel.com/developers/xml/configuration-1-23-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-23-0 http://www.eiffel.com/developers/xml/configuration-1-23-0.xsd" name="simple_ipc" uuid="09BF6D32-32BA-41AB-9752-ABC652C6EE60" library_target="simple_ipc">
-	<description>Simple IPC Library - SCOOP-compatible Win32 named pipe communication</description>
+	<description>Cross-platform IPC library - Named pipes (Windows) + Unix sockets (Linux/macOS)</description>
 	<target name="simple_ipc">
 		<root all_classes="true"/>
 		<file_rule>

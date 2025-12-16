@@ -1,9 +1,9 @@
 {
   "name": "simple_ipc",
-  "version": "0.1.0",
-  "description": "Simple IPC Library - SCOOP-compatible Win32 named pipe communication",
+  "version": "2.0.0",
+  "description": "Cross-platform IPC library - Named pipes (Windows) + Unix sockets (Linux/macOS)",
   "author": "Larry Rix",
   "license": "MIT",
   "category": "networking",
-  "keywords": ["ipc", "pipes", "interprocess", "communication"]
+  "keywords": ["ipc", "pipes", "sockets", "interprocess", "communication", "cross-platform"]
 }

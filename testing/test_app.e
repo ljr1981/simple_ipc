@@ -17,55 +17,55 @@ feature -- Initialization
 			l_tests: LIB_TESTS
 			l_passed, l_failed: INTEGER
 		do
-			print ("Testing SIMPLE_IPC...%N%N")
+			print ("Testing SIMPLE_IPC v2.0.0...%N%N")
 
 			create l_tests
 
-			-- Test: Server creation
-			print ("  test_server_creation: ")
-			l_tests.on_prepare
-			l_tests.test_server_creation
-			l_tests.on_clean
-			print ("PASSED%N")
-			l_passed := l_passed + 1
+			-- Original tests
+			l_passed := l_passed + run_test (l_tests, "test_server_creation", agent l_tests.test_server_creation)
+			l_passed := l_passed + run_test (l_tests, "test_server_close", agent l_tests.test_server_close)
+			l_passed := l_passed + run_test (l_tests, "test_client_without_server", agent l_tests.test_client_without_server)
+			l_passed := l_passed + run_test (l_tests, "test_multiple_servers_same_name", agent l_tests.test_multiple_servers_same_name)
+			l_passed := l_passed + run_test (l_tests, "test_server_status_queries", agent l_tests.test_server_status_queries)
 
-			-- Test: Server close
-			print ("  test_server_close: ")
-			l_tests.on_prepare
-			l_tests.test_server_close
-			l_tests.on_clean
-			print ("PASSED%N")
-			l_passed := l_passed + 1
+			-- Facade tests
+			l_passed := l_passed + run_test (l_tests, "test_facade_platform_detection", agent l_tests.test_facade_platform_detection)
+			l_passed := l_passed + run_test (l_tests, "test_facade_connection_access", agent l_tests.test_facade_connection_access)
 
-			-- Test: Client without server
-			print ("  test_client_without_server: ")
-			l_tests.on_prepare
-			l_tests.test_client_without_server
-			l_tests.on_clean
-			print ("PASSED%N")
-			l_passed := l_passed + 1
+			-- Named pipe direct tests
+			l_passed := l_passed + run_test (l_tests, "test_named_pipe_direct_server", agent l_tests.test_named_pipe_direct_server)
+			l_passed := l_passed + run_test (l_tests, "test_named_pipe_direct_client_no_server", agent l_tests.test_named_pipe_direct_client_no_server)
 
-			-- Test: Multiple servers same name
-			print ("  test_multiple_servers_same_name: ")
-			l_tests.on_prepare
-			l_tests.test_multiple_servers_same_name
-			l_tests.on_clean
-			print ("PASSED%N")
-			l_passed := l_passed + 1
+			-- Unix socket stub tests
+			l_passed := l_passed + run_test (l_tests, "test_unix_socket_stub_server", agent l_tests.test_unix_socket_stub_server)
+			l_passed := l_passed + run_test (l_tests, "test_unix_socket_stub_client", agent l_tests.test_unix_socket_stub_client)
 
-			-- Test: Server status queries
-			print ("  test_server_status_queries: ")
-			l_tests.on_prepare
-			l_tests.test_server_status_queries
-			l_tests.on_clean
-			print ("PASSED%N")
-			l_passed := l_passed + 1
+			-- Status tests
+			l_passed := l_passed + run_test (l_tests, "test_read_count_initial", agent l_tests.test_read_count_initial)
+			l_passed := l_passed + run_test (l_tests, "test_write_count_initial", agent l_tests.test_write_count_initial)
+			l_passed := l_passed + run_test (l_tests, "test_wait_disconnect_initial_status", agent l_tests.test_wait_disconnect_initial_status)
+
+			l_failed := 14 - l_passed
 
 			print ("%N======================================%N")
 			print ("Results: " + l_passed.out + " passed, " + l_failed.out + " failed%N")
+		end
+
+feature {NONE} -- Implementation
+
+	run_test (a_tests: LIB_TESTS; a_name: STRING; a_test: PROCEDURE): INTEGER
+			-- Run a single test. Return 1 if passed, 0 if failed.
+		do
+			print ("  " + a_name + ": ")
+			a_tests.on_prepare
+			a_test.call (Void)
+			a_tests.on_clean
+			print ("PASSED%N")
+			Result := 1
 		rescue
 			print ("FAILED%N")
-			l_failed := l_failed + 1
+			Result := 0
+			a_tests.on_clean
 			retry
 		end
 

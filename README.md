@@ -6,22 +6,33 @@
 
 **[Documentation](https://simple-eiffel.github.io/simple_ipc/)**
 
-### Named Pipe IPC Library for Eiffel
+### Cross-Platform IPC Library for Eiffel
 
 [![Language](https://img.shields.io/badge/language-Eiffel-blue.svg)](https://www.eiffel.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)]()
+[![Platform](https://img.shields.io/badge/platform-Windows%20|%20Linux%20|%20macOS-blue.svg)]()
 [![SCOOP](https://img.shields.io/badge/SCOOP-compatible-orange.svg)]()
 [![Design by Contract](https://img.shields.io/badge/DbC-enforced-orange.svg)]()
-[![Tests](https://img.shields.io/badge/tests-5%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-14%20passing-brightgreen.svg)]()
 
 ---
 
 ## Overview
 
-SIMPLE_IPC provides SCOOP-compatible inter-process communication via Windows Named Pipes for Eiffel applications. It wraps the Win32 Named Pipe API (CreateNamedPipe, ConnectNamedPipe, CreateFile, etc.) through a clean C interface, enabling IPC without threading complications.
+SIMPLE_IPC provides SCOOP-compatible inter-process communication for Eiffel applications with platform-specific transports:
 
-The library supports both server and client pipe operations, with read/write capabilities for text and binary data, making it ideal for local service communication and process coordination.
+- **Windows:** Named Pipes (`\\.\pipe\name`)
+- **Linux/macOS:** Unix Domain Sockets (`/var/run/name.sock`) *(coming soon)*
+
+The library uses a facade pattern with a common `IPC_CONNECTION` interface, automatically selecting the appropriate transport for the current platform.
+
+**v2.0.0 Architecture:**
+```
+SIMPLE_IPC (facade)
+    └── IPC_CONNECTION (deferred base)
+            ├── NAMED_PIPE_CONNECTION (Windows)
+            └── UNIX_SOCKET_CONNECTION (Linux/macOS)
+```
 
 **Developed using AI-assisted methodology:** Built interactively with Claude Opus 4.5 following rigorous Design by Contract principles.
 
@@ -29,28 +40,21 @@ The library supports both server and client pipe operations, with read/write cap
 
 ## Features
 
-### Pipe Operations
+### Transport Support
 
-- **Server Mode** - Create named pipes and wait for client connections
-- **Client Mode** - Connect to existing named pipes
+| Platform | Transport | Status |
+|----------|-----------|--------|
+| Windows | Named Pipes | Implemented |
+| Linux | Unix Sockets | Stub (coming soon) |
+| macOS | Unix Sockets | Stub (coming soon) |
+
+### Operations
+
+- **Server Mode** - Create IPC endpoint and wait for client connections
+- **Client Mode** - Connect to existing IPC endpoint
 - **Read/Write** - Send and receive string and binary data
 - **Connection Management** - Disconnect and reconnect capabilities
-
-### Pipe Modes
-
-| Mode | Description |
-|------|-------------|
-| Server | Creates pipe and waits for connections |
-| Client | Connects to existing pipe |
-
-### Data Operations
-
-| Operation | Description |
-|-----------|-------------|
-| `read` | Read string data from pipe |
-| `write` | Write string data to pipe |
-| `read_bytes` | Read binary data |
-| `write_bytes` | Write binary data |
+- **Platform Query** - Check which transport is in use
 
 ---
 
@@ -63,88 +67,57 @@ The library supports both server and client pipe operations, with read/write cap
 git clone https://github.com/simple-eiffel/simple_ipc.git
 ```
 
-2. Compile the C library:
+2. Set the environment variable:
 ```bash
-cd simple_ipc/Clib
-compile.bat
-```
-
-3. Set the environment variable:
-```bash
+# Windows
 set SIMPLE_IPC=D:\path\to\simple_ipc
+
+# Linux/macOS
+export SIMPLE_IPC=/path/to/simple_ipc
 ```
 
-4. Add to your ECF file:
+3. Add to your ECF file:
 ```xml
 <library name="simple_ipc" location="$SIMPLE_IPC\simple_ipc.ecf"/>
 ```
 
 ### Basic Usage
 
-#### Server Side
+#### Using the Facade (Recommended)
 
 ```eiffel
-class
-    MY_SERVER
+-- Server
+create ipc.make_server ("my_service")
+if ipc.is_valid then
+    ipc.wait_for_connection (5000)  -- 5 second timeout
+    if ipc.is_connected then
+        ipc.write_string ("Hello client!")
+        response := ipc.read_string (1024)
+    end
+    ipc.close
+end
 
-feature
-
-    start_server
-        local
-            pipe: SIMPLE_IPC
-        do
-            -- Create named pipe server
-            create pipe.make_server ("MyPipe")
-
-            if pipe.is_valid then
-                print ("Waiting for client...%N")
-                pipe.wait_for_connection
-
-                if pipe.is_connected then
-                    -- Read from client
-                    if attached pipe.read as msg then
-                        print ("Received: " + msg + "%N")
-                    end
-
-                    -- Send response
-                    pipe.write ("Hello from server!")
-                end
-
-                pipe.close
-            end
-        end
-
+-- Client
+create ipc.make_client ("my_service")
+if ipc.is_connected then
+    message := ipc.read_string (1024)
+    ipc.write_string ("Hello server!")
+    ipc.close
 end
 ```
 
-#### Client Side
+#### Direct Platform Access
 
 ```eiffel
-class
-    MY_CLIENT
+-- Windows named pipe directly
+create pipe.make_server ("my_pipe")
+if pipe.is_valid then
+    -- Use Win32 named pipe features
+end
 
-feature
-
-    connect_to_server
-        local
-            pipe: SIMPLE_IPC
-        do
-            -- Connect to named pipe
-            create pipe.make_client ("MyPipe")
-
-            if pipe.is_valid then
-                -- Send message
-                pipe.write ("Hello from client!")
-
-                -- Read response
-                if attached pipe.read as response then
-                    print ("Server says: " + response + "%N")
-                end
-
-                pipe.close
-            end
-        end
-
+-- Check platform
+if ipc.is_using_named_pipes then
+    print ("Using Windows Named Pipes%N")
 end
 ```
 
@@ -152,75 +125,59 @@ end
 
 ## API Reference
 
-### SIMPLE_IPC Class
-
-#### Creation
+### SIMPLE_IPC (Facade)
 
 ```eiffel
-make_server (a_name: STRING_8)
-    -- Create named pipe server with given name.
-    -- Pipe name will be: \\.\pipe\<a_name>
+-- Creation
+make_server (a_name: READABLE_STRING_GENERAL)
+make_client (a_name: READABLE_STRING_GENERAL)
 
-make_client (a_name: STRING_8)
-    -- Connect to existing named pipe.
-```
-
-#### Connection Management
-
-```eiffel
-wait_for_connection
-    -- Wait for client to connect (server mode).
-
-disconnect
-    -- Disconnect current client, allow new connection.
-
-close
-    -- Close pipe and release resources.
-```
-
-#### Reading Data
-
-```eiffel
-read: detachable STRING_8
-    -- Read string from pipe.
-    -- Returns Void if no data or error.
-
-read_bytes (a_count: INTEGER): detachable ARRAY [NATURAL_8]
-    -- Read up to a_count bytes from pipe.
-```
-
-#### Writing Data
-
-```eiffel
-write (a_data: STRING_8): BOOLEAN
-    -- Write string to pipe.
-    -- Returns True if successful.
-
-write_bytes (a_data: ARRAY [NATURAL_8]): BOOLEAN
-    -- Write bytes to pipe.
-```
-
-#### Status Queries
-
-```eiffel
+-- Status
 is_valid: BOOLEAN
-    -- Is the pipe valid?
-
 is_connected: BOOLEAN
-    -- Is a client connected? (server mode)
-
 is_server: BOOLEAN
-    -- Is this a server pipe?
+has_data_available: BOOLEAN
+last_error: detachable STRING_32
 
-pipe_name: STRING_8
-    -- Full pipe name (\\.\pipe\...)
+-- Platform Query
+is_using_named_pipes: BOOLEAN
+is_using_unix_socket: BOOLEAN
+connection: IPC_CONNECTION  -- Access underlying connection
+
+-- Server Operations
+wait_for_connection (a_timeout_ms: INTEGER)
+disconnect
+
+-- Read Operations
+read_bytes (a_count: INTEGER): ARRAY [NATURAL_8]
+read_string (a_max_length: INTEGER): STRING_8
+read_line: STRING_8
+
+-- Write Operations
+write_bytes (a_bytes: ARRAY [NATURAL_8])
+write_string (a_string: READABLE_STRING_8)
+
+-- Operations
+close
 ```
+
+### IPC_CONNECTION (Deferred Base)
+
+The abstract interface implemented by all platform-specific connections. Use this type for polymorphic handling.
+
+### NAMED_PIPE_CONNECTION (Windows)
+
+Direct access to Windows Named Pipes. Same API as `SIMPLE_IPC`.
+
+### UNIX_SOCKET_CONNECTION (Linux/macOS)
+
+Unix domain socket implementation. Currently a stub - returns "not yet implemented" errors.
 
 ---
 
 ## Building & Testing
 
-### Build Library
+### Compile Library
 
 ```bash
 cd simple_ipc
@@ -234,7 +191,7 @@ ec -config simple_ipc.ecf -target simple_ipc_tests -c_compile
 ./EIFGENs/simple_ipc_tests/W_code/simple_ipc.exe
 ```
 
-**Test Results:** 5 tests passing
+**Test Results:** 14 tests passing
 
 ---
 
@@ -242,33 +199,43 @@ ec -config simple_ipc.ecf -target simple_ipc_tests -c_compile
 
 ```
 simple_ipc/
-├── Clib/                       # C wrapper library
-│   ├── simple_ipc.h            # C header file
-│   ├── simple_ipc.c            # C implementation
-│   └── compile.bat             # Build script
-├── src/                        # Eiffel source
-│   └── simple_ipc.e            # Main wrapper class
-├── testing/                    # Test suite
-│   ├── application.e           # Test runner
-│   └── test_simple_ipc.e       # Test cases
-├── simple_ipc.ecf              # Library configuration
-├── README.md                   # This file
-└── LICENSE                     # MIT License
+├── Clib/                           # C wrapper library
+│   ├── simple_ipc.h                # Win32 pipe header
+│   ├── simple_ipc.c                # Win32 pipe implementation
+│   └── compile.bat                 # Build script
+├── src/                            # Eiffel source
+│   ├── simple_ipc.e                # Facade (platform detection)
+│   ├── ipc_connection.e            # Deferred base class
+│   ├── named_pipe_connection.e     # Windows implementation
+│   └── unix_socket_connection.e    # Unix stub (Phase 2)
+├── testing/                        # Test suite
+│   ├── lib_tests.e                 # Test cases
+│   └── test_app.e                  # Test runner
+├── docs/                           # Documentation
+│   └── index.html                  # API docs
+├── simple_ipc.ecf                  # Library configuration
+├── README.md                       # This file
+├── CHANGELOG.md                    # Version history
+└── LICENSE                         # MIT License
 ```
 
 ---
 
 ## Dependencies
 
-- **Windows OS** - Named Pipes are Windows-specific
 - **EiffelStudio 23.09+** - Development environment
-- **Visual Studio C++ Build Tools** - For compiling C wrapper
+- **Windows:** Visual Studio C++ Build Tools (for C wrapper)
+- **Linux/macOS:** GCC (for future Unix socket support)
 
 ---
 
-## SCOOP Compatibility
+## Roadmap
 
-SIMPLE_IPC is fully SCOOP-compatible. The C wrapper handles all Win32 API calls synchronously without threading dependencies, making it safe for use in concurrent Eiffel applications.
+- [x] Windows Named Pipes (v1.0)
+- [x] Cross-platform architecture (v2.0)
+- [ ] Unix Domain Sockets (Phase 2)
+- [ ] Connection pooling
+- [ ] Async I/O support
 
 ---
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>simple_ipc - Named Pipe IPC for Eiffel</title>
+    <title>simple_ipc - Cross-Platform IPC for Eiffel</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="images/logo.png">
 </head>
@@ -13,10 +13,10 @@
             <img src="images/logo.png" alt="simple_* logo" class="logo">
         </div>
         <h1>simple_ipc</h1>
-        <p class="tagline">Named Pipe IPC for Eiffel</p>
+        <p class="tagline">Cross-Platform IPC for Eiffel</p>
         <div class="badges">
             <span class="badge badge-rfc">Foundation Layer</span>
-            <span class="badge badge-version">v1.0.0</span>
+            <span class="badge badge-version">v2.0.0</span>
             <span class="badge badge-license">MIT</span>
         </div>
     </header>
@@ -24,8 +24,8 @@
     <nav>
         <ul>
             <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
             <li><a href="#quick-start">Quick Start</a></li>
-            <li><a href="#features">Features</a></li>
             <li><a href="#api">API Reference</a></li>
             <li><a href="https://github.com/simple-eiffel/simple_ipc">GitHub</a></li>
         </ul>
@@ -35,18 +35,39 @@
         <section id="overview">
             <h2>Overview</h2>
             <p>
-                <strong>simple_ipc</strong> provides SCOOP-compatible inter-process communication via
-                Windows Named Pipes for Eiffel applications. It wraps the Win32 Named Pipe API through
-                a clean C interface, enabling IPC without threading complications.
+                <strong>simple_ipc</strong> provides SCOOP-compatible inter-process communication for
+                Eiffel applications with platform-specific transports:
             </p>
+            <ul>
+                <li><strong>Windows:</strong> Named Pipes (<code>\\.\pipe\name</code>)</li>
+                <li><strong>Linux/macOS:</strong> Unix Domain Sockets (coming soon)</li>
+            </ul>
             <p>
-                The library supports both server and client pipe operations, with read/write capabilities
-                for text and binary data, making it ideal for local service communication and process
-                coordination.
+                The library uses a facade pattern with a common <code>IPC_CONNECTION</code> interface,
+                automatically selecting the appropriate transport for the current platform.
             </p>
             <p>
                 Part of the <strong>simple_*</strong> ecosystem of focused, single-purpose Eiffel libraries.
             </p>
+        </section>
+
+        <section id="architecture">
+            <h2>Architecture</h2>
+            <pre><code>SIMPLE_IPC (facade)
+    |
+    +-- IPC_CONNECTION (deferred base)
+            |
+            +-- NAMED_PIPE_CONNECTION (Windows)
+            |
+            +-- UNIX_SOCKET_CONNECTION (Linux/macOS)</code></pre>
+
+            <h3>Platform Support</h3>
+            <table>
+                <tr><th>Platform</th><th>Transport</th><th>Status</th></tr>
+                <tr><td>Windows</td><td>Named Pipes</td><td>Implemented</td></tr>
+                <tr><td>Linux</td><td>Unix Sockets</td><td>Stub (Phase 2)</td></tr>
+                <tr><td>macOS</td><td>Unix Sockets</td><td>Stub (Phase 2)</td></tr>
+            </table>
         </section>
 
         <section id="quick-start">
@@ -54,115 +75,91 @@
             <h3>Installation</h3>
             <pre><code>&lt;library name="simple_ipc" location="$SIMPLE_IPC\simple_ipc.ecf"/&gt;</code></pre>
 
-            <h3>Server Side</h3>
-            <pre><code>local
-    pipe: SIMPLE_IPC
-do
-    -- Create named pipe server
-    create pipe.make_server ("MyPipe")
-
-    if pipe.is_valid then
-        print ("Waiting for client...%N")
-        pipe.wait_for_connection
-
-        if pipe.is_connected then
-            -- Read from client
-            if attached pipe.read as msg then
-                print ("Received: " + msg + "%N")
-            end
-
-            -- Send response
-            pipe.write ("Hello from server!")
-        end
-
-        pipe.close
+            <h3>Using the Facade (Recommended)</h3>
+            <pre><code>-- Server
+create ipc.make_server ("my_service")
+if ipc.is_valid then
+    ipc.wait_for_connection (5000)  -- 5 second timeout
+    if ipc.is_connected then
+        ipc.write_string ("Hello client!")
+        response := ipc.read_string (1024)
     end
+    ipc.close
+end
+
+-- Client
+create ipc.make_client ("my_service")
+if ipc.is_connected then
+    message := ipc.read_string (1024)
+    ipc.write_string ("Hello server!")
+    ipc.close
 end</code></pre>
 
-            <h3>Client Side</h3>
-            <pre><code>local
-    pipe: SIMPLE_IPC
-do
-    -- Connect to named pipe
-    create pipe.make_client ("MyPipe")
-
-    if pipe.is_valid then
-        -- Send message
-        pipe.write ("Hello from client!")
-
-        -- Read response
-        if attached pipe.read as response then
-            print ("Server says: " + response + "%N")
-        end
-
-        pipe.close
-    end
+            <h3>Platform Detection</h3>
+            <pre><code>if ipc.is_using_named_pipes then
+    print ("Using Windows Named Pipes%N")
+elseif ipc.is_using_unix_socket then
+    print ("Using Unix Domain Sockets%N")
 end</code></pre>
-        </section>
-
-        <section id="features">
-            <h2>Features</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h4>Server Mode</h4>
-                    <p>Create named pipes and wait for client connections</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Client Mode</h4>
-                    <p>Connect to existing named pipes</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Text/Binary</h4>
-                    <p>Send and receive string and binary data</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Connection Mgmt</h4>
-                    <p>Disconnect and reconnect capabilities</p>
-                </div>
-            </div>
         </section>
 
         <section id="api">
             <h2>API Reference</h2>
 
-            <h3>Creation</h3>
+            <h3>SIMPLE_IPC (Facade)</h3>
             <table>
                 <tr><th>Feature</th><th>Description</th></tr>
-                <tr><td><code>make_server (name)</code></td><td>Create named pipe server (\\.\pipe\name)</td></tr>
-                <tr><td><code>make_client (name)</code></td><td>Connect to existing named pipe</td></tr>
+                <tr><td><code>make_server (name)</code></td><td>Create IPC server endpoint</td></tr>
+                <tr><td><code>make_client (name)</code></td><td>Connect to IPC server</td></tr>
+                <tr><td><code>connection: IPC_CONNECTION</code></td><td>Access underlying transport</td></tr>
+                <tr><td><code>is_using_named_pipes</code></td><td>True if using Windows pipes</td></tr>
+                <tr><td><code>is_using_unix_socket</code></td><td>True if using Unix sockets</td></tr>
             </table>
 
             <h3>Connection Management</h3>
             <table>
                 <tr><th>Feature</th><th>Description</th></tr>
-                <tr><td><code>wait_for_connection</code></td><td>Wait for client to connect (server mode)</td></tr>
-                <tr><td><code>disconnect</code></td><td>Disconnect current client, allow new connection</td></tr>
-                <tr><td><code>close</code></td><td>Close pipe and release resources</td></tr>
+                <tr><td><code>wait_for_connection (timeout_ms)</code></td><td>Wait for client (server mode)</td></tr>
+                <tr><td><code>disconnect</code></td><td>Disconnect client, allow new connection</td></tr>
+                <tr><td><code>close</code></td><td>Close and release resources</td></tr>
             </table>
 
             <h3>Data Transfer</h3>
             <table>
                 <tr><th>Feature</th><th>Description</th></tr>
-                <tr><td><code>read: detachable STRING_8</code></td><td>Read string from pipe</td></tr>
-                <tr><td><code>write (data): BOOLEAN</code></td><td>Write string to pipe</td></tr>
+                <tr><td><code>read_string (max_length)</code></td><td>Read string up to max_length</td></tr>
+                <tr><td><code>write_string (data)</code></td><td>Write string</td></tr>
                 <tr><td><code>read_bytes (count)</code></td><td>Read up to count bytes</td></tr>
-                <tr><td><code>write_bytes (data)</code></td><td>Write bytes to pipe</td></tr>
+                <tr><td><code>write_bytes (data)</code></td><td>Write bytes</td></tr>
+                <tr><td><code>read_line</code></td><td>Read until newline</td></tr>
             </table>
 
             <h3>Status Queries</h3>
             <table>
                 <tr><th>Feature</th><th>Description</th></tr>
-                <tr><td><code>is_valid</code></td><td>Is the pipe valid?</td></tr>
-                <tr><td><code>is_connected</code></td><td>Is a client connected? (server mode)</td></tr>
-                <tr><td><code>is_server</code></td><td>Is this a server pipe?</td></tr>
-                <tr><td><code>pipe_name</code></td><td>Full pipe name (\\.\pipe\...)</td></tr>
+                <tr><td><code>is_valid</code></td><td>Is handle valid?</td></tr>
+                <tr><td><code>is_connected</code></td><td>Is connection established?</td></tr>
+                <tr><td><code>is_server</code></td><td>Is this a server?</td></tr>
+                <tr><td><code>has_data_available</code></td><td>Is data ready to read?</td></tr>
+                <tr><td><code>last_error</code></td><td>Error message from last operation</td></tr>
+                <tr><td><code>last_read_count</code></td><td>Bytes read in last operation</td></tr>
+                <tr><td><code>last_write_count</code></td><td>Bytes written in last operation</td></tr>
             </table>
+
+            <h3>IPC_CONNECTION (Deferred Base)</h3>
+            <p>Abstract interface implemented by all platform-specific connections. Use for polymorphic handling.</p>
+
+            <h3>NAMED_PIPE_CONNECTION (Windows)</h3>
+            <p>Direct access to Windows Named Pipes. Same API as SIMPLE_IPC facade.</p>
+
+            <h3>UNIX_SOCKET_CONNECTION (Linux/macOS)</h3>
+            <p>Unix domain socket implementation. Currently a stub - returns "not yet implemented" errors.</p>
         </section>
     </main>
 
     <footer>
         <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> library collection</p>
-        <p>Dependencies: base, encoding</p>
+        <p>Dependencies: base</p>
         <p class="copyright">MIT License - Copyright (c) 2024-2025, Larry Rix</p>
     </footer>
 </body>
