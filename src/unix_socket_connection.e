@@ -332,14 +332,12 @@ feature {NONE} -- C Externals
 			-- Create a Unix domain socket. Returns file descriptor or -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline"
+			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
 					return -1;
 				#else
-					#include <sys/socket.h>
-					#include <sys/un.h>
 					return socket(AF_UNIX, SOCK_STREAM, 0);
 				#endif
 			]"
@@ -349,20 +347,19 @@ feature {NONE} -- C Externals
 			-- Connect socket to path. Returns 0 on success, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline"
+			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
 					return -1;
 				#else
-					#include <sys/socket.h>
-					#include <sys/un.h>
-					#include <string.h>
+					{
 					struct sockaddr_un addr;
 					memset(&addr, 0, sizeof(addr));
 					addr.sun_family = AF_UNIX;
 					strncpy(addr.sun_path, (const char*)$a_path, sizeof(addr.sun_path) - 1);
 					return connect($a_fd, (struct sockaddr*)&addr, sizeof(addr));
+					}
 				#endif
 			]"
 		end
@@ -371,13 +368,12 @@ feature {NONE} -- C Externals
 			-- Read from socket. Returns bytes read, 0 for EOF, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline"
+			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
 					return -1;
 				#else
-					#include <unistd.h>
 					return read($a_fd, $a_buffer, $a_size);
 				#endif
 			]"
@@ -387,13 +383,12 @@ feature {NONE} -- C Externals
 			-- Write to socket. Returns bytes written, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline"
+			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
 					return -1;
 				#else
-					#include <unistd.h>
 					return write($a_fd, $a_data, $a_size);
 				#endif
 			]"
@@ -402,11 +397,10 @@ feature {NONE} -- C Externals
 	c_socket_close (a_fd: INTEGER)
 			-- Close socket. No-op on Windows.
 		external
-			"C inline"
+			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
 		alias
 			"[
 				#if !defined(EIF_WINDOWS) && !defined(_WIN32)
-					#include <unistd.h>
 					close($a_fd);
 				#endif
 			]"
@@ -416,14 +410,13 @@ feature {NONE} -- C Externals
 			-- Check if data is available on socket. Returns 1 if data available, 0 if not, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline"
+			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
 					return -1;
 				#else
-					#include <sys/select.h>
-					#include <sys/time.h>
+					{
 					fd_set fds;
 					struct timeval tv;
 					FD_ZERO(&fds);
@@ -431,6 +424,7 @@ feature {NONE} -- C Externals
 					tv.tv_sec = 0;
 					tv.tv_usec = 0;
 					return select($a_fd + 1, &fds, NULL, NULL, &tv);
+					}
 				#endif
 			]"
 		end
