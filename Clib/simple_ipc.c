@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(_WIN32) || defined(EIF_WINDOWS)
+
 #define PIPE_BUFFER_SIZE 4096
 
 static char last_error_msg[512] = {0};
@@ -306,3 +308,22 @@ void sipc_close(sipc_pipe* pipe) {
         free(pipe);
     }
 }
+
+#else
+/* Linux/macOS stubs - use UNIX_SOCKET_CONNECTION instead */
+static const char* stub_error = "Named pipes not supported. Use Unix sockets.";
+char* sipc_make_pipe_name(const char* n) { (void)n; return NULL; }
+sipc_pipe* sipc_create_server(const char* n) { (void)n; return NULL; }
+sipc_pipe* sipc_connect_client(const char* n) { (void)n; return NULL; }
+int sipc_wait_for_connection(sipc_pipe* p, int t) { (void)p; (void)t; return 0; }
+int sipc_disconnect(sipc_pipe* p) { (void)p; return 0; }
+int sipc_read(sipc_pipe* p, void* b, int s) { (void)p; (void)b; (void)s; return -1; }
+int sipc_write(sipc_pipe* p, const void* d, int s) { (void)p; (void)d; (void)s; return -1; }
+int sipc_read_line(sipc_pipe* p, char* b, int s) { (void)p; (void)b; (void)s; return -1; }
+int sipc_write_string(sipc_pipe* p, const char* s) { (void)p; (void)s; return -1; }
+int sipc_data_available(sipc_pipe* p) { (void)p; return -1; }
+int sipc_is_connected(sipc_pipe* p) { (void)p; return 0; }
+int sipc_is_server(sipc_pipe* p) { (void)p; return 0; }
+const char* sipc_get_error(sipc_pipe* p) { (void)p; return stub_error; }
+void sipc_close(sipc_pipe* p) { (void)p; }
+#endif /* _WIN32 || EIF_WINDOWS */
