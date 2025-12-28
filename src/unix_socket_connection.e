@@ -51,10 +51,10 @@ feature {NONE} -- Initialization
 			is_server_internal := False
 			error_message := Void
 
-			-- Create socket
+			-- Create socket (returns -1 on Windows - not supported)
 			l_fd := c_socket_create
 			if l_fd < 0 then
-				error_message := "Failed to create Unix socket"
+				error_message := "Unix socket client not yet implemented"
 			else
 				socket_fd := l_fd
 				-- Connect to server
@@ -332,7 +332,7 @@ feature {NONE} -- C Externals
 			-- Create a Unix domain socket. Returns file descriptor or -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
+			"C inline use %"unix_socket.h%""
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
@@ -347,7 +347,7 @@ feature {NONE} -- C Externals
 			-- Connect socket to path. Returns 0 on success, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
+			"C inline use %"unix_socket.h%""
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
@@ -368,7 +368,7 @@ feature {NONE} -- C Externals
 			-- Read from socket. Returns bytes read, 0 for EOF, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
+			"C inline use %"unix_socket.h%""
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
@@ -383,7 +383,7 @@ feature {NONE} -- C Externals
 			-- Write to socket. Returns bytes written, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
+			"C inline use %"unix_socket.h%""
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)
@@ -397,7 +397,7 @@ feature {NONE} -- C Externals
 	c_socket_close (a_fd: INTEGER)
 			-- Close socket. No-op on Windows.
 		external
-			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
+			"C inline use %"unix_socket.h%""
 		alias
 			"[
 				#if !defined(EIF_WINDOWS) && !defined(_WIN32)
@@ -410,7 +410,7 @@ feature {NONE} -- C Externals
 			-- Check if data is available on socket. Returns 1 if data available, 0 if not, -1 on error.
 			-- Returns -1 on Windows (not supported).
 		external
-			"C inline use <sys/socket.h>, <sys/un.h>, <string.h>, <unistd.h>, <sys/select.h>, <sys/time.h>"
+			"C inline use %"unix_socket.h%""
 		alias
 			"[
 				#if defined(EIF_WINDOWS) || defined(_WIN32)

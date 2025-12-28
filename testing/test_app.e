@@ -55,16 +55,22 @@ feature {NONE} -- Implementation
 
 	run_test (a_tests: LIB_TESTS; a_name: STRING; a_test: PROCEDURE): INTEGER
 			-- Run a single test. Return 1 if passed, 0 if failed.
+		local
+			l_failed: BOOLEAN
 		do
-			print ("  " + a_name + ": ")
-			a_tests.on_prepare
-			a_test.call (Void)
-			a_tests.on_clean
-			print ("PASSED%N")
-			Result := 1
+			if not l_failed then
+				print ("  " + a_name + ": ")
+				a_tests.on_prepare
+				a_test.call (Void)
+				a_tests.on_clean
+				print ("PASSED%N")
+				Result := 1
+			else
+				Result := 0
+			end
 		rescue
 			print ("FAILED%N")
-			Result := 0
+			l_failed := True
 			a_tests.on_clean
 			retry
 		end
